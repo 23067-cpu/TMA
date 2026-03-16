@@ -1,0 +1,18 @@
+# ====== CELLULE 3 : Lecture / affichage temporel / lecture audio ======
+# Lecture du fichier WAV créé
+fs, sig = wavfile.read("voice.wav")
+# si stereo -> prendre canal 0
+if sig.ndim > 1:
+    sig = sig[:,0]
+# normaliser en float [-1,1]
+if sig.dtype.kind == 'i':
+    sig = sig.astype(np.float32) / np.iinfo(sig.dtype).max
+elif sig.dtype.kind == 'f':
+    sig = sig.astype(np.float32)
+
+print(f"Samplage : {fs} Hz, durée : {len(sig)/fs:.2f} s, samples : {len(sig)}")
+# afficher temporel
+plot_time(sig, fs, title="Signal temporel (enregistrement)")
+
+# écouter dans Colab
+display(Audio("voice.wav"))

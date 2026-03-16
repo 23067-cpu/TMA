@@ -1,0 +1,32 @@
+# ====== CELLULE 6 : Superposition des spectres (plusieurs fichiers) ======
+# Exemple : remplacer par les noms réels des fichiers des membres
+files = [f for f in os.listdir('.') if f.lower().endswith('.wav')]
+print("Fichiers WAV trouvés :", files)
+
+plt.figure(figsize=(12,5))
+
+for f in files:
+    fs_i, sig_i = wavfile.read(f)
+    if sig_i.ndim > 1:
+        sig_i = sig_i[:,0]
+    # normaliser
+    if sig_i.dtype.kind == 'i':
+        sig_i = sig_i.astype(np.float32) / np.iinfo(sig_i.dtype).max
+    else:
+        sig_i = sig_i.astype(np.float32)
+    # fenêtre et FFT
+    Nfft = 2**int(np.ceil(np.log2(len(sig_i)*2)))
+    S_i = np.abs(fft(sig_i * np.hamming(len(sig_i)), Nfft))[:Nfft//2]
+    freqs_i = fftfreq(Nfft, 1/fs_i)[:Nfft//2]
+    # normaliser pour l'affichage (comparaison relative)
+    S_i = S_i / np.max(S_i)
+    plt.plot(freqs_i, S_i, label=f)
+
+plt.xlim(0,2000)
+plt.xlabel("Fréquence (Hz)")
+plt.ylabel("Amplitude (normée)")
+plt.title("Superposition des spectres des enregistrements")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()

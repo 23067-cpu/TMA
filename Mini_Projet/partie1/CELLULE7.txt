@@ -1,0 +1,32 @@
+# ====== CELLULE 7 : Comparaison automatique des caractéristiques ======
+results = []
+cutoff_richness = 2000  # Hz pour estimer richesse harmonique
+
+for f in files:
+    fs_i, sig_i = wavfile.read(f)
+    if sig_i.ndim > 1:
+        sig_i = sig_i[:,0]
+    if sig_i.dtype.kind == 'i':
+        sig_i = sig_i.astype(np.float32) / np.iinfo(sig_i.dtype).max
+    else:
+        sig_i = sig_i.astype(np.float32)
+    # pitch (autocorr plus fiable)
+    pitch = detect_pitch_autocorr(sig_i, fs_i, fmin=60, fmax=400)
+    # harmonic richness metric
+    richness = harmonic_richness(sig_i, fs_i, cutoff_hz=cutoff_richness)
+    results.append((f, pitch, richness))
+
+# afficher résultats
+print("Nom du fichier | pitch (Hz, autocorr) | richesse harmonique (>2000Hz fraction)")
+for r in results:
+    print(f"{r[0]:<20} {None if r[1] is None else f'{r[1]:6.1f}':>8} Hz     {r[2]:.4f}")
+
+# Qui a la voix la plus grave ?
+valid_pitches = [r for r in results if r[1] is not None]
+if valid_pitches:
+    lowest = min(valid_pitches, key=lambda x: x[1])
+    print(f"\nVoix la plus grave (pitch le plus bas) : {lowest[0]} ({lowest[1]:.1f} Hz)")
+# Qui a le spectre le plus riche ?
+if results:
+    richest = max(results, key=lambda x: x[2])
+    print(f"Spectre le plus riche en hautes fréquences : {richest[0]} (richesse={richest[2]:.4f})")

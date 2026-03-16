@@ -1,0 +1,30 @@
+# ====== CELLULE 8 : Texte d'analyse (à coller dans ton rapport) ======
+"""
+Observations et interprétation :
+
+1) Fréquence fondamentale (Pitch)
+   - La fréquence fondamentale a été estimée par deux méthodes :
+     * Méthode FFT : pic spectral dans la plage [50, 500] Hz. Utile pour repérer un pic évident.
+     * Méthode autocorrélation : détecte l'époque fondamentale dans le signal temporel ; souvent plus robuste quand les harmoniques dominent.
+   - Valeurs typiques attendues : hommes ≈ 85–155 Hz, femmes ≈ 165–255 Hz.
+
+2) Variation spectrale selon les voyelles
+   - Les voyelles diffèrent par leurs formants (pics dans le spectre) : 
+     * /a/, /e/, /i/, /o/, /u/ déplacent l'énergie vers des fréquences différentes.
+   - On observe que les voyelles ouvertes ont souvent plus d'énergie dans les basses/médiums ; les voyelles fermées concentrent l'énergie différemment.
+
+3) Superposition / séparation des voix
+   - Si plusieurs voix sont mélangées, la séparation devient difficile car :
+     * Les spectres se recouvrent (mêmes bandes de fréquences).
+     * Les méthodes aveugles (ICA) peuvent aider si plusieurs canaux existent ; avec un seul micro l'ICA est insuffisante.
+   - Dans le cas d'un mélange mono, il faut recourir à des méthodes plus complexes (modèles statistiques, apprentissage profond ou séparation par source via différences temporo-spectrales).
+
+4) Richesse harmonique
+   - On a quantifié la "richesse harmonique" par la fraction d'énergie spectrale au-dessus de 2000 Hz.
+   - Plus cette fraction est élevée, plus la voix présente d'harmoniques hautes fréquences (brillance / "presence").
+
+5) Conseils pour de meilleurs résultats expérimentaux
+   - Enregistrer dans un endroit calme (SNR élevé).
+   - Maintenir une distance micro-voix constante.
+   - Prononcer des voyelles prolongées pour une estimation de pitch stable (ex: "aaaah").
+"""

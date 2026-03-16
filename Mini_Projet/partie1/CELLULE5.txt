@@ -1,0 +1,19 @@
+# ====== CELLULE 5 : Détection pitch (FFT & autocorr) ======
+pitch_fft = detect_pitch_fft(sig, fs, fmin=50, fmax=500)
+pitch_ac = detect_pitch_autocorr(sig, fs, fmin=50, fmax=500)
+
+print("Pitch estimé (FFT peak)      :", None if pitch_fft is None else f"{pitch_fft:.1f} Hz")
+print("Pitch estimé (autocorrélation):", None if pitch_ac is None else f"{pitch_ac:.1f} Hz")
+
+# pour info, marquer le pic sur le spectre si présent
+if pitch_fft is not None:
+    plt.figure(figsize=(12,3))
+    plt.plot(freqs, S)
+    plt.axvline(pitch_fft, color='r', linestyle='--', label=f"Pitch FFT ≈ {pitch_fft:.1f} Hz")
+    plt.xlim(0, 2000)
+    plt.xlabel("Fréquence (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title("Spectre avec pitch détecté")
+    plt.legend()
+    plt.grid(True)
+    plt.show()

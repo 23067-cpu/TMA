@@ -1,0 +1,80 @@
+# ====== CELLULE 1 : Imports & fonctions utilitaires ======
+import numpy as np
+import matplotlib.pyplot as plt
+from IPython.display import Javascript, Audio, display
+from google.colab import output
+from base64 import b64decode
+from scipy.fft import fft, fftfreq
+from scipy.io import wavfile
+import os
+
+# fonction d'affichage simple pour spectres temps/freq
+def plot_time(signal, fs, title="Signal temporel"):
+    t = np.arange(len(signal)) / fs
+    plt.figure(figsize=(12,3))
+    plt.plot(t, signal)
+    plt.xlabel("Temps (s)")
+    plt.ylabel("Amplitude")
+    plt.title(title)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def plot_spectrum(sig, fs, xlim=2000, title="Spectre (FFT)"):
+    N = len(sig)
+    S = np.abs(fft(sig))
+    freqs = fftfreq(N, 1/fs)
+    mask = freqs >= 0
+    plt.figure(figsize=(12,3))
+    plt.plot(freqs[mask], S[mask])
+    plt.xlim(0, xlim)
+    plt.xlabel("Fréquence (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title(title)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    return freqs[mask], S[mask]
+
+# détection de pitch par FFT (pic le plus fort dans une plage raisonnable)
+def detect_pitch_fft(sig, fs, fmin=50, fmax=500):
+    N = len(sig)
+    S = np.abs(fft(sig))
+    freqs = fftfreq(N, 1/fs)
+    mask_pos = (freqs >= fmin) & (freqs <= fmax)
+    if not np.any(mask_pos):
+        return None
+    idx = np.argmax(S[mask_pos])
+    freqs_pos = freqs[mask_pos]
+    return freqs_pos[idx]
+
+# détection de pitch par autocorrélation (plus robuste aux harmoniques)
+def detect_pitch_autocorr(sig, fs, fmin=50, fmax=500):
+    # window short segment for pitch (voice stationary)
+    x = sig - np.mean(sig)
+    corr = np.correlate(x, x, mode='full')
+    corr = corr[corr.size//2:]
+    # limiter lag en fonction des fréquences min/max
+    min_lag = int(fs / fmax)
+    max_lag = int(fs / fmin)
+    if max_lag <= min_lag:
+        return None
+    # trouver le pic d'autocorrélation dans la plage
+    window = corr[min_lag:max_lag]
+    peak = np.argmax(window) + min_lag
+    pitch = fs / peak
+    return pitch
+
+# métrique de "richesse harmonique" : énergie au-dessus d'une coupure relative
+def harmonic_richness(sig, fs, cutoff_hz=2000):
+    N = len(sig)
+    S = np.abs(fft(sig))
+    freqs = fftfreq(N, 1/fs)
+    mask_pos = freqs >= 0
+    freqs_pos = freqs[mask_pos]
+    S_pos = S[mask_pos]
+    total_energy = np.sum(S_pos)
+    if total_energy == 0:
+        return 0.0
+    high_energy = np.sum(S_pos[freqs_pos >= cutoff_hz])
+    return high_energy / total_energy

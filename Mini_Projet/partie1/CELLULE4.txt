@@ -1,0 +1,8 @@
+# ====== CELLULE 4 : FFT et affichage ======
+# pour la FFT, appliquer une fenêtre Hamming pour réduire leakage
+win = np.hamming(len(sig))
+sig_win = sig * win
+
+freqs, S = plot_spectrum(sig_win, fs, xlim=5000, title="Spectre (FFT) de l'enregistrement")
+# conserver arrays retournés par la fonction (plot_spectrum) : elle a tracé et retourné freqs,S
+# Note : plot_spectrum renvoie freqs et S (positifs).

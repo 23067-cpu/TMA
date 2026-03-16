@@ -1,0 +1,92 @@
+# ====== CELLULE 2async function recordAudioWav(seconds = 5) {
+ : Enregistrement microphone via JavaScript(5 s) ======
+        RECORD_WAV_JS = r"""
+    // obtenir le flux micro
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const sampleRate = audioCtx.sampleRate;
+    const source = audioCtx.createMediaStreamSource(stream);
+    const bufferSize = 4096;
+    const recorder = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+    let buffers = [];
+    recorder.onaudioprocess = e => {
+        // canal mono (0)
+        buffers.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    };
+    source.connect(recorder);
+    recorder.connect(audioCtx.destination);
+
+    // enregistre pendant `seconds`
+    await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+
+    // arrêt propre
+    recorder.disconnect();
+    source.disconnect();
+    stream.getTracks().forEach(t => t.stop());
+    // concaténation
+    let length = 0;
+    for (let i = 0; i < buffers.length; i++) length += buffers[i].length;
+    let result = new Float32Array(length);
+    let offset = 0;
+    for (let i = 0; i < buffers.length; i++) {
+        result.set(buffers[i], offset);
+        offset += buffers[i].length;
+    }
+    // conversion float -> 16-bit PCM
+    function floatTo16BitPCM(float32Array) {
+        let buffer = new ArrayBuffer(float32Array.length * 2);
+        let view = new DataView(buffer);
+        let offset = 0;
+        for (let i = 0; i < float32Array.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, float32Array[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+        return new Uint8Array(buffer);
+    }
+    // construire l'entête WAV (RIFF)
+    let wavBuffer = new ArrayBuffer(44 + result.length * 2);
+    let view = new DataView(wavBuffer);
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + result.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, 1, true); // mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true); // byte rate = samplerate * numChannels * bytesPerSample
+    view.setUint16(32, 2, true); // block align
+    view.setUint16(34, 16, true); // bits per sample
+    writeString(view, 36, 'data');
+    view.setUint32(40, result.length * 2, true);
+    // samples
+    let pcm = floatTo16BitPCM(result);
+    for (let i = 0; i < pcm.length; i++) {
+        view.setUint8(44 + i, pcm[i]);
+    }
+    // convertir en base64
+    let bytes = new Uint8Array(wavBuffer);
+    // btoa on strings — pour de très gros buffers ça peut échouer chez certains navigateurs,
+    // mais pour ~5s ça marche normalement.
+    let binary = '';
+    const chunk = 0;
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+"""
+
+display(Javascript(RECORD_WAV_JS))
+print("Lancement de l'enregistrement (5s). Autorise le micro si le navigateur le demande.")
+audio_b64 = output.eval_js("recordAudioWav(5)")  # enregistre 5 secondes
+# décoder et sauvegarder
+wav_bytes = b64decode(audio_b64)
+with open("voice.wav", "wb") as f:
+f.write(wav_bytes)
+print("Enregistrement sauvegardé : voice.wav (durée ≈ 5s)")
