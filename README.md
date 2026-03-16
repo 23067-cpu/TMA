@@ -50,7 +50,7 @@ TMA/
 ## 📌 Description
 
 ### TD (Travaux Dirigés)
-Les TDs **TD1**, **TD2** et **TD3** contiennent des solutions sous forme de **photos** (images `.jpg`) représentant les résolutions manuscrites des exercices.
+Les TDs **TD1**, **TD2** et **TD3** contiennent des solutions sous forme de **photos** (images `.jpg`) représentant les résolutions manuscrites ou numérisées des exercices.
 
 ### TP (Travaux Pratiques)
 Les TPs sont implémentés en **Python** :
